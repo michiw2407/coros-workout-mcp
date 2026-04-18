@@ -27,12 +27,14 @@ ES module project (`"type": "module"` in package.json). All internal imports mus
 
 ## Architecture
 
-**4 source files, clear separation:**
+**6 source files, clear separation:**
 
-- `index.ts` — MCP server setup. Registers 6 tools (`authenticate_coros`, `check_coros_auth`, `search_exercises`, `create_workout`, `update_exercises`, `list_workouts`) using `@modelcontextprotocol/sdk`. STDIO transport only.
-- `coros-api.ts` — COROS API client + payload construction. Handles auth (MD5 password hashing, token storage at `~/.config/coros-workout-mcp/auth.json`), and the workout creation flow: `resolveExercises()` → `calculateWorkout()` (POST `/training/program/calculate`) → `addWorkout()` (POST `/training/program/add`). Also contains `buildCatalogFromRaw()` for the `update_exercises` tool.
+- `index.ts` — MCP server setup. Registers 16 tools: workout creation (`authenticate_coros`, `check_coros_auth`, `search_exercises`, `create_workout`, `update_exercises`, `list_workouts`) and training data (`get_user_profile`, `get_dashboard`, `get_personal_records`, `get_fitness_trend`, `get_training_load`, `get_training_summary`, `get_daily_training`, `get_activities`, `get_activity_detail`, `get_training_schedule`). STDIO transport only.
+- `coros-api.ts` — COROS API client + payload construction. Handles auth (MD5 password hashing, token storage at `~/.config/coros-workout-mcp/auth.json`), workout creation flow, and 11 read-only query functions for dashboard, EvoLab, activities, and schedule data.
 - `exercise-catalog.ts` — In-memory exercise search engine. Loads `data/exercises.json` lazily, provides `findByName()` (exact, case-insensitive), `searchExercises()` (fuzzy name + muscle/bodyPart/equipment filters). The catalog is the single source of truth for exercise names used in `create_workout`.
-- `types.ts` — All interfaces and enum maps. Numeric code → human-readable name mappings for muscles, body parts, equipment. Key types: `CatalogExercise` (bundled catalog), `ExercisePayload` (API payload), `ExerciseOverrides` (user input), `RawExercise` (API response).
+- `formatters.ts` — Converts raw API response data into human-readable text for MCP tool output. One formatter per read tool.
+- `date-utils.ts` — `resolveDateRange()` converts period presets ("7d", "30d", "90d", "year") to YYYYMMDD date ranges.
+- `types.ts` — All interfaces and enum maps. Numeric code → human-readable name mappings for muscles, body parts, equipment, sport types. Key types: `CatalogExercise` (bundled catalog), `ExercisePayload` (API payload), `ExerciseOverrides` (user input), `RawExercise` (API response).
 
 **Data flow for workout creation:**
 User provides exercise names + overrides → `findByName()` validates against catalog → `buildExercisePayload()` merges catalog defaults with overrides → `buildWorkoutPayload()` wraps exercises → POST to `/calculate` for metrics → POST to `/add` to save.
