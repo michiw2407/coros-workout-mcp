@@ -12,11 +12,18 @@ MCP server that lets Claude design strength workouts and push them to a COROS wa
 npm install && npm run build   # TypeScript → dist/
 npm test                       # vitest (unit tests only, no API calls)
 npm run test:watch             # vitest watch mode
+npm start                      # node dist/index.js (STDIO transport)
 ```
 
-Build output goes to `dist/` via `tsc`. The server entry point is `dist/src/index.ts` (compiled to `dist/src/index.js`).
+Build output goes to `dist/` via `tsc`. The server entry point is `src/index.ts` (compiled to `dist/src/index.js`).
 
 To run a single test file: `npx vitest run src/__tests__/exercise-catalog.test.ts`
+
+The `prepare-catalog` script (`npm run prepare-catalog`) merges raw API data with human-readable names to produce `data/exercises.json`. This is a one-time setup script, not part of the normal build.
+
+## Module System
+
+ES module project (`"type": "module"` in package.json). All internal imports must use `.js` extensions (e.g., `import { login } from "./coros-api.js"`), even though the source files are `.ts`. This is a Node16 module resolution requirement.
 
 ## Architecture
 
