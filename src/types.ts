@@ -271,11 +271,80 @@ export interface AuthData {
 }
 
 export const SportTypeCode: Record<number, string> = {
+  // Running
   100: "Outdoor Run",
   101: "Indoor Run",
   102: "Trail Run",
-  200: "Outdoor Cycling",
+  103: "Track Run",
+  // Walking/Hiking
+  104: "Hike",
+  900: "Walk",
+  // Climbing
+  105: "Mountain Climb",
+  106: "Climb",
+  800: "Indoor Climb",
+  801: "Bouldering",
+  10003: "Outdoor Climb (Multi Pitch)",
+  // Cycling
+  200: "Road Bike",
+  201: "Indoor Bike",
+  202: "E-Bike",
+  203: "Gravel Bike",
+  204: "Mountain Bike",
+  205: "E-MTB",
+  299: "Helmet Bike",
+  // Swimming
+  300: "Pool Swim",
+  301: "Open Water",
+  // Strength/Cardio
+  400: "Gym Cardio",
+  401: "GPS Cardio",
   402: "Strength Training",
+  901: "Jump Rope",
+  902: "Floor Climb",
+  903: "Elliptical",
+  904: "Yoga",
+  905: "Pilates",
+  906: "Boxing",
+  // Snow Sports
+  500: "Ski",
+  501: "Snowboard",
+  502: "XC Ski",
+  503: "Ski Touring",
+  // Water Sports
+  700: "Rowing",
+  701: "Indoor Rower",
+  702: "Whitewater",
+  704: "Flatwater",
+  705: "Windsurfing",
+  706: "Speedsurfing",
+  // Fishing
+  707: "Boat Fishing",
+  708: "Shore Fishing",
+  709: "Pond Fishing",
+  710: "Kayak Fishing",
+  711: "Inshore Fishing",
+  712: "Offshore Fishing",
+  713: "Boat Fly Fishing",
+  714: "Shore Fly Fishing",
+  715: "Surf Fishing",
+  // Ball Sports
+  1000: "Badminton",
+  1001: "Table Tennis",
+  1002: "Basketball",
+  1003: "Soccer",
+  1004: "Pickleball",
+  1005: "Tennis",
+  1006: "Padel",
+  // Multisport
+  10000: "Triathlon",
+  10001: "Multisport",
+  // Leisure
+  1100: "Frisbee",
+  1101: "Skateboard",
+  // Other
+  98: "Custom Activity",
+  1200: "Hybrid Fitness",
   9904: "HIIT",
 } as const;
 
