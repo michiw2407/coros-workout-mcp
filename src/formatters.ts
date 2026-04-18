@@ -143,7 +143,7 @@ export function formatTrainingSummary(data: Record<string, unknown>): string {
 
   const summary = data.summaryInfo as Record<string, unknown> | undefined;
   if (summary) {
-    lines.push(`Overview: ${JSON.stringify(summary)}`);
+    lines.push(`Training Load Ratio: ${summary.trainingLoadRatio ?? "N/A"} (${summary.trainingLoadRatioState ?? ""}) | Recommended days: ${summary.recomendTlInDays ?? "N/A"}`);
     lines.push(``);
   }
 
@@ -289,7 +289,9 @@ export function formatActivityDetail(data: Record<string, unknown>): string {
     for (const g of graphs) {
       const items = g.graphItem as number[] | undefined;
       if (items && items.length > 0) {
-        lines.push(`  ${g.key}: [${items.length} data points] min=${Math.min(...items)} max=${Math.max(...items)} avg=${Math.round(items.reduce((a, b) => a + b, 0) / items.length)}`);
+        let min = items[0], max = items[0], sum = 0;
+        for (const v of items) { if (v < min) min = v; if (v > max) max = v; sum += v; }
+        lines.push(`  ${g.key}: [${items.length} data points] min=${min} max=${max} avg=${Math.round(sum / items.length)}`);
       }
     }
   }

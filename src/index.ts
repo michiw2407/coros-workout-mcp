@@ -525,11 +525,9 @@ server.tool(
 // --- Tool: get_fitness_trend ---
 server.tool(
   "get_fitness_trend",
-  "Get EvoLab fitness/fatigue trends: daily ATI/CTI scores, sport statistics, weekly training load, and periodization stages. Use for analyzing training balance and overtraining risk.",
-  {
-    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period (default: returns all available data)"),
-  },
-  async ({ period }) => {
+  "Get EvoLab fitness/fatigue trends: daily ATI/CTI scores, sport statistics, weekly training load, and periodization stages. Returns all available data. Use for analyzing training balance and overtraining risk.",
+  {},
+  async () => {
     try {
       const auth = await getValidAuth();
       if (!auth) {

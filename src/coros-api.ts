@@ -568,11 +568,12 @@ export async function queryActivities(
   auth: AuthData,
   options: { page?: number; size?: number; sportType?: number } = {}
 ): Promise<unknown> {
-  const result = (await apiGet(auth, "/activity/query", {
+  const params: Record<string, string | number> = {
     pageNumber: options.page ?? 1,
     size: options.size ?? 20,
-    modeList: "",
-  })) as { data: unknown };
+    modeList: options.sportType ? String(options.sportType) : "",
+  };
+  const result = (await apiGet(auth, "/activity/query", params)) as { data: unknown };
   return result.data;
 }
 
