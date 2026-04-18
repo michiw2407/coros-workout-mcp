@@ -14,6 +14,17 @@ import {
   queryExerciseCatalog,
   fetchI18nStrings,
   buildCatalogFromRaw,
+  queryUserProfile,
+  queryDashboard,
+  queryPersonalRecords,
+  queryFitnessTrend,
+  queryTrainingLoad,
+  queryTrainingSummary,
+  queryDailyTraining,
+  queryActivities,
+  queryActivityDetail,
+  queryTrainingSchedule,
+  queryTrainingScheduleSum,
 } from "./coros-api.js";
 import {
   searchExercises,
@@ -23,6 +34,19 @@ import {
   getCatalogPath,
 } from "./exercise-catalog.js";
 import type { Region } from "./types.js";
+import { resolveDateRange } from "./date-utils.js";
+import {
+  formatUserProfile,
+  formatDashboard,
+  formatPersonalRecords,
+  formatFitnessTrend,
+  formatTrainingLoad,
+  formatTrainingSummary,
+  formatDailyTraining,
+  formatActivities,
+  formatActivityDetail,
+  formatTrainingSchedule,
+} from "./formatters.js";
 
 const server = new McpServer({
   name: "coros-workout",
@@ -437,6 +461,63 @@ server.tool(
         ],
         isError: true,
       };
+    }
+  }
+);
+
+// --- Tool: get_user_profile ---
+server.tool(
+  "get_user_profile",
+  "Get the authenticated user's COROS profile including HR zones, weight, FTP, LTHR, LTSP, and running performance scores. Useful for personalizing training recommendations.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryUserProfile(auth);
+      return { content: [{ type: "text" as const, text: formatUserProfile(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_dashboard ---
+server.tool(
+  "get_dashboard",
+  "Get the COROS dashboard overview: weekly records, recent activities, per-sport breakdown, training targets, and fitness/fatigue indicators.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryDashboard(auth);
+      return { content: [{ type: "text" as const, text: formatDashboard(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_personal_records ---
+server.tool(
+  "get_personal_records",
+  "Get the user's personal records (PRs) across all sports — best distances, times, training loads.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryPersonalRecords(auth);
+      return { content: [{ type: "text" as const, text: formatPersonalRecords(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
     }
   }
 );
