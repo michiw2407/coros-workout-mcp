@@ -522,6 +522,99 @@ server.tool(
   }
 );
 
+// --- Tool: get_fitness_trend ---
+server.tool(
+  "get_fitness_trend",
+  "Get EvoLab fitness/fatigue trends: daily ATI/CTI scores, sport statistics, weekly training load, and periodization stages. Use for analyzing training balance and overtraining risk.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period (default: returns all available data)"),
+  },
+  async ({ period }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryFitnessTrend(auth);
+      return { content: [{ type: "text" as const, text: formatFitnessTrend(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_training_load ---
+server.tool(
+  "get_training_load",
+  "Get training load intensity breakdown for a period. Shows total load vs target, intensity distribution. Use for load management and periodization.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period"),
+    startDay: z.string().optional().describe("Start date (YYYYMMDD) — use instead of period for custom range"),
+    endDay: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDay, endDay }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDay, endDay);
+      const data = await queryTrainingLoad(auth, range.startDay, range.endDay);
+      return { content: [{ type: "text" as const, text: formatTrainingLoad(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_training_summary ---
+server.tool(
+  "get_training_summary",
+  "Get aggregated training statistics for a period: total distance, duration, training load broken down by sport type.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period"),
+    startDay: z.string().optional().describe("Start date (YYYYMMDD)"),
+    endDay: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDay, endDay }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDay, endDay);
+      const data = await queryTrainingSummary(auth, range.startDay, range.endDay);
+      return { content: [{ type: "text" as const, text: formatTrainingSummary(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_daily_training ---
+server.tool(
+  "get_daily_training",
+  "Get day-by-day training breakdown: daily ATI/CTI, distance, duration, performance scores, and weekly aggregates. Use for detailed periodization analysis.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period"),
+    startDay: z.string().optional().describe("Start date (YYYYMMDD)"),
+    endDay: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDay, endDay }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDay, endDay);
+      const data = await queryDailyTraining(auth, range.startDay, range.endDay);
+      return { content: [{ type: "text" as const, text: formatDailyTraining(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
 // --- Start server ---
 async function main() {
   const transport = new StdioServerTransport();
