@@ -14,6 +14,17 @@ import {
   queryExerciseCatalog,
   fetchI18nStrings,
   buildCatalogFromRaw,
+  queryUserProfile,
+  queryDashboard,
+  queryPersonalRecords,
+  queryFitnessTrend,
+  queryTrainingLoad,
+  queryTrainingSummary,
+  queryDailyTraining,
+  queryActivities,
+  queryActivityDetail,
+  queryTrainingSchedule,
+  queryTrainingScheduleSum,
 } from "./coros-api.js";
 import {
   searchExercises,
@@ -23,6 +34,19 @@ import {
   getCatalogPath,
 } from "./exercise-catalog.js";
 import type { Region } from "./types.js";
+import { resolveDateRange } from "./date-utils.js";
+import {
+  formatUserProfile,
+  formatDashboard,
+  formatPersonalRecords,
+  formatFitnessTrend,
+  formatTrainingLoad,
+  formatTrainingSummary,
+  formatDailyTraining,
+  formatActivities,
+  formatActivityDetail,
+  formatTrainingSchedule,
+} from "./formatters.js";
 
 const server = new McpServer({
   name: "coros-workout",
@@ -437,6 +461,234 @@ server.tool(
         ],
         isError: true,
       };
+    }
+  }
+);
+
+// --- Tool: get_user_profile ---
+server.tool(
+  "get_user_profile",
+  "Get the authenticated user's COROS profile including HR zones, weight, FTP, LTHR, LTSP, and running performance scores. Useful for personalizing training recommendations.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryUserProfile(auth);
+      return { content: [{ type: "text" as const, text: formatUserProfile(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_dashboard ---
+server.tool(
+  "get_dashboard",
+  "Get the COROS dashboard overview: weekly records, recent activities, per-sport breakdown, training targets, and fitness/fatigue indicators.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryDashboard(auth);
+      return { content: [{ type: "text" as const, text: formatDashboard(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_personal_records ---
+server.tool(
+  "get_personal_records",
+  "Get the user's personal records (PRs) across all sports — best distances, times, training loads.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryPersonalRecords(auth);
+      return { content: [{ type: "text" as const, text: formatPersonalRecords(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_fitness_trend ---
+server.tool(
+  "get_fitness_trend",
+  "Get EvoLab fitness/fatigue trends: daily ATI/CTI scores, sport statistics, weekly training load, and periodization stages. Returns all available data. Use for analyzing training balance and overtraining risk.",
+  {},
+  async () => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryFitnessTrend(auth);
+      return { content: [{ type: "text" as const, text: formatFitnessTrend(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_training_load ---
+server.tool(
+  "get_training_load",
+  "Get training load intensity breakdown for a period. Shows total load vs target, intensity distribution. Use for load management and periodization.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period"),
+    startDay: z.string().optional().describe("Start date (YYYYMMDD) — use instead of period for custom range"),
+    endDay: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDay, endDay }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDay, endDay);
+      const data = await queryTrainingLoad(auth, range.startDay, range.endDay);
+      return { content: [{ type: "text" as const, text: formatTrainingLoad(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_training_summary ---
+server.tool(
+  "get_training_summary",
+  "Get aggregated training statistics for a period: total distance, duration, training load broken down by sport type.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period"),
+    startDay: z.string().optional().describe("Start date (YYYYMMDD)"),
+    endDay: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDay, endDay }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDay, endDay);
+      const data = await queryTrainingSummary(auth, range.startDay, range.endDay);
+      return { content: [{ type: "text" as const, text: formatTrainingSummary(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_daily_training ---
+server.tool(
+  "get_daily_training",
+  "Get day-by-day training breakdown: daily ATI/CTI, distance, duration, performance scores, and weekly aggregates. Use for detailed periodization analysis.",
+  {
+    period: z.enum(["7d", "30d", "90d", "year"]).optional().describe("Preset period"),
+    startDay: z.string().optional().describe("Start date (YYYYMMDD)"),
+    endDay: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDay, endDay }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDay, endDay);
+      const data = await queryDailyTraining(auth, range.startDay, range.endDay);
+      return { content: [{ type: "text" as const, text: formatDailyTraining(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_activities ---
+server.tool(
+  "get_activities",
+  "List past activities from COROS with key metrics. Returns labelId and sportType needed for get_activity_detail. Supports pagination and sport type filtering.",
+  {
+    page: z.number().int().min(1).default(1).describe("Page number"),
+    size: z.number().int().min(1).max(50).default(20).describe("Activities per page"),
+    sportType: z.number().int().default(0).describe("Filter by sport type (0=all, 100=outdoor run, 402=strength, 9904=HIIT)"),
+  },
+  async ({ page, size, sportType }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryActivities(auth, { page, size, sportType: sportType || undefined });
+      return { content: [{ type: "text" as const, text: formatActivities(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_activity_detail ---
+server.tool(
+  "get_activity_detail",
+  "Get full detail for a single activity: summary stats, HR/pace/cadence time series, lap splits, HR zone distribution, muscle groups (strength), and device info. Use labelId and sportType from get_activities.",
+  {
+    labelId: z.string().describe("Activity ID (from get_activities results)"),
+    sportType: z.number().int().describe("Sport type code (from get_activities results, e.g. 100=run, 402=strength, 9904=HIIT)"),
+  },
+  async ({ labelId, sportType }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const data = await queryActivityDetail(auth, labelId, sportType);
+      return { content: [{ type: "text" as const, text: formatActivityDetail(data as Record<string, unknown>) }] };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  }
+);
+
+// --- Tool: get_training_schedule ---
+server.tool(
+  "get_training_schedule",
+  "Get training schedule calendar: planned workouts, execution status, daily/weekly training summaries. Shows what's scheduled vs what was actually completed.",
+  {
+    period: z.enum(["7d", "30d", "90d"]).optional().describe("Preset period"),
+    startDate: z.string().optional().describe("Start date (YYYYMMDD)"),
+    endDate: z.string().optional().describe("End date (YYYYMMDD)"),
+  },
+  async ({ period, startDate, endDate }) => {
+    try {
+      const auth = await getValidAuth();
+      if (!auth) {
+        return { content: [{ type: "text" as const, text: "Not authenticated. Use authenticate_coros first." }], isError: true };
+      }
+      const range = resolveDateRange(period, startDate, endDate);
+      const [scheduleData, sumData] = await Promise.all([
+        queryTrainingSchedule(auth, range.startDay, range.endDay),
+        queryTrainingScheduleSum(auth, range.startDay, range.endDay),
+      ]);
+      return {
+        content: [{
+          type: "text" as const,
+          text: formatTrainingSchedule(
+            scheduleData as Record<string, unknown>,
+            sumData as Record<string, unknown>
+          ),
+        }],
+      };
+    } catch (error) {
+      return { content: [{ type: "text" as const, text: `Failed: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
     }
   }
 );

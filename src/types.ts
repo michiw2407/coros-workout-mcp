@@ -270,6 +270,15 @@ export interface AuthData {
   timestamp: number;
 }
 
+export const SportTypeCode: Record<number, string> = {
+  100: "Outdoor Run",
+  101: "Indoor Run",
+  102: "Trail Run",
+  200: "Outdoor Cycling",
+  402: "Strength Training",
+  9904: "HIIT",
+} as const;
+
 export const REGION_URLS = {
   us: "https://teamapi.coros.com",
   eu: "https://teameuapi.coros.com",

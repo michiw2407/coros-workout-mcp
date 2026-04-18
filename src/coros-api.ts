@@ -501,3 +501,131 @@ export async function queryWorkouts(
   };
   return apiPost(auth, "/training/program/query", body);
 }
+
+// --- Read-only query functions ---
+
+export async function queryUserProfile(auth: AuthData): Promise<unknown> {
+  const result = (await apiGet(auth, "/account/query")) as { data: unknown };
+  return result.data;
+}
+
+export async function queryDashboard(auth: AuthData): Promise<unknown> {
+  const result = (await apiGet(auth, "/dashboard/detail/query")) as {
+    data: unknown;
+  };
+  return result.data;
+}
+
+export async function queryPersonalRecords(auth: AuthData): Promise<unknown> {
+  const result = (await apiGet(auth, "/dashboard/queryCycleRecord")) as {
+    data: unknown;
+  };
+  return result.data;
+}
+
+export async function queryFitnessTrend(auth: AuthData): Promise<unknown> {
+  const result = (await apiGet(auth, "/analyse/query")) as { data: unknown };
+  return result.data;
+}
+
+export async function queryTrainingLoad(
+  auth: AuthData,
+  startDay: string,
+  endDay: string
+): Promise<unknown> {
+  const result = (await apiGet(auth, "/analyse/tl/query", {
+    startDay,
+    endDay,
+  })) as { data: unknown };
+  return result.data;
+}
+
+export async function queryTrainingSummary(
+  auth: AuthData,
+  startDay: string,
+  endDay: string
+): Promise<unknown> {
+  const result = (await apiGet(auth, "/analyse/summary/query", {
+    startDay,
+    endDay,
+  })) as { data: unknown };
+  return result.data;
+}
+
+export async function queryDailyTraining(
+  auth: AuthData,
+  startDay: string,
+  endDay: string
+): Promise<unknown> {
+  const result = (await apiGet(auth, "/analyse/dayDetail/query", {
+    startDay,
+    endDay,
+  })) as { data: unknown };
+  return result.data;
+}
+
+export async function queryActivities(
+  auth: AuthData,
+  options: { page?: number; size?: number; sportType?: number } = {}
+): Promise<unknown> {
+  const params: Record<string, string | number> = {
+    pageNumber: options.page ?? 1,
+    size: options.size ?? 20,
+    modeList: options.sportType ? String(options.sportType) : "",
+  };
+  const result = (await apiGet(auth, "/activity/query", params)) as { data: unknown };
+  return result.data;
+}
+
+export async function queryActivityDetail(
+  auth: AuthData,
+  labelId: string,
+  sportType: number
+): Promise<unknown> {
+  // This endpoint uses query params + POST with empty body
+  const apiUrl = REGION_URLS[auth.region];
+  const url = new URL(`${apiUrl}/activity/detail/query`);
+  url.searchParams.set("labelId", labelId);
+  url.searchParams.set("sportType", String(sportType));
+  url.searchParams.set("screenW", "1174");
+  url.searchParams.set("screenH", "1050");
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: apiHeaders(auth),
+    body: JSON.stringify({}),
+  });
+  const data = await res.json();
+  if (data.result !== "0000") {
+    throw new Error(
+      `COROS API error (/activity/detail/query): ${data.message || data.result}`
+    );
+  }
+  return data.data;
+}
+
+export async function queryTrainingSchedule(
+  auth: AuthData,
+  startDate: string,
+  endDate: string
+): Promise<unknown> {
+  const result = (await apiGet(auth, "/training/schedule/query", {
+    startDate,
+    endDate,
+    supportRestExercise: 1,
+  })) as { data: unknown };
+  return result.data;
+}
+
+export async function queryTrainingScheduleSum(
+  auth: AuthData,
+  startDate: string,
+  endDate: string
+): Promise<unknown> {
+  const result = (await apiGet(auth, "/training/schedule/querysum", {
+    teamId: "",
+    userId: auth.userId,
+    startDate,
+    endDate,
+  })) as { data: unknown };
+  return result.data;
+}
